@@ -222,3 +222,5 @@ class Ecdsa {
     }
 
 }
+
+export { Ecdsa, Signature };
