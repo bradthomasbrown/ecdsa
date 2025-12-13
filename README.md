@@ -21,6 +21,7 @@ npm i @bradthomasbrown/ecdsa
 
 ## Usage
 ```js
+import { Ecdsa } from "@bradthomasbrown/ecdsa";
 import { secp256k1 } from "@bradthomasbrown/finite-domain/domains";
 import { keccak_c, sha_3 } from "@bradthomasbrown/keccak";
 
