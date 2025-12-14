@@ -16,10 +16,27 @@ function compare(a:Uint8Array, b:Uint8Array):number {
 }
 
 /**
- * Encode `B` of the least-significant bytes of a positive BigInt to a big-endian encoded Uint8Array.
+ * Encode `B` of the least-significant bytes of a positive BigInt to a little-endian encoded Uint8Array.
  * @param {bigint} b - The postitive BigInt to encode.
  * @param {number} B - The number of bytes to encode.
- * @returns {Uint8Array} The big-endian encoded Uint8Array of the `B` least-significant bytes of `b`.
+ * @returns {Uint8Array} The little-endian encoded Uint8Array of the `B` least-significant bytes of `b`.
+ */
+function bigintToUint8Array_LE(b:bigint, B:number):Uint8Array {
+    const a = new Uint8Array(B);
+    let i = 0;
+    while (b > 0n) {
+        a[i] = Number(b & 0xffn);
+        b >>= 8n;
+        i++;
+    }
+    return a;
+}
+
+/**
+ * Encode `B` of the most-significant bytes of a positive BigInt to a big-endian encoded Uint8Array.
+ * @param {bigint} b - The postitive BigInt to encode.
+ * @param {number} B - The number of bytes to encode.
+ * @returns {Uint8Array} The big-endian encoded Uint8Array of the `B` most-significant bytes of `b`.
  */
 function bigintToUint8Array_BE(b:bigint, B:number):Uint8Array {
     let i = 0;
@@ -49,7 +66,7 @@ function uint8ArrayToBigint_LE(a:Uint8Array, B?:number):bigint {
 }
 
 /**
- * Decode `B` of the least-significant bytes of a big-endian encoded Uint8Array to a positive BigInt.
+ * Decode `B` of the most-significant bytes of a big-endian encoded Uint8Array to a positive BigInt.
  * @param {bigint} a - The Uint8Array to decode.
  * @param {number|undefined} B - The number of bytes to decode, or undefined if decoding all bytes.
  * @returns {bigint} The decoded BigInt.
@@ -161,13 +178,13 @@ class Ecdsa {
     static sign(T:FiniteDomain, H:Uint8Array, d:bigint, hashlen:number):Signature {
         const zero = new Uint8Array(hashlen);
         const K = new Uint8Array(hashlen);
-        const N = bigintToUint8Array_BE(T.n, hashlen);
+        const N = bigintToUint8Array_LE(T.n, hashlen);
         const e = uint8ArrayToBigint_BE(H, hashlen);
         const R = new FinitePoint();
         while (true) {
             do crypto.getRandomValues(K)
             while (compare(K, N) == 1 || compare(K, zero) == 0);
-            const k = uint8ArrayToBigint_BE(K, hashlen);
+            const k = uint8ArrayToBigint_LE(K, hashlen);
             T.E.multiply(R, k, T.G);
             if (R.x === undefined) continue;
             const r = R.x % T.n;
