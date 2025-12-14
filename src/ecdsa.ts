@@ -16,18 +16,21 @@ function compare(a:Uint8Array, b:Uint8Array):number {
 }
 
 /**
- * Encode `B` of the least-significant bytes of a positive BigInt to a little-endian encoded Uint8Array.
+ * Encode `B` of the least-significant bytes of a positive BigInt to a big-endian encoded Uint8Array.
  * @param {bigint} b - The postitive BigInt to encode.
  * @param {number} B - The number of bytes to encode.
- * @returns {Uint8Array} The little-endian encoded Uint8Array of the `B` least-significant bytes of `b`.
+ * @returns {Uint8Array} The big-endian encoded Uint8Array of the `B` least-significant bytes of `b`.
  */
-function bigintToUint8Array_LE(b:bigint, B:number):Uint8Array {
+function bigintToUint8Array_BE(b:bigint, B:number):Uint8Array {
+    let i = 0;
+    for (let c = b; c > 0n; i++, c >>= 8n);
+    b = b >> ((i > B - 1 ? BigInt(i - B) : 0n) << 3n);
+    i = Math.min(B - 1, i - 1);
     const a = new Uint8Array(B);
-    let _1a_ = 0;
     while (b > 0n) {
-        a[_1a_] = Number(b & 0xffn);
+        a[i] = Number(b & 0xffn);
         b >>= 8n;
-        _1a_++;
+        i--;
     }
     return a;
 }
@@ -42,6 +45,19 @@ function uint8ArrayToBigint_LE(a:Uint8Array, B?:number):bigint {
     let b = 0n;
     for (let i = 0; i < Math.min(a.byteLength, B ?? a.byteLength); i++)
         b += BigInt(a[i]!) << (BigInt(i) << 3n);
+    return b;
+}
+
+/**
+ * Decode `B` of the least-significant bytes of a big-endian encoded Uint8Array to a positive BigInt.
+ * @param {bigint} a - The Uint8Array to decode.
+ * @param {number|undefined} B - The number of bytes to decode, or undefined if decoding all bytes.
+ * @returns {bigint} The decoded BigInt.
+ */
+function uint8ArrayToBigint_BE(a:Uint8Array, B?:number):bigint {
+    let b = 0n;
+    for (let i = 0; i < Math.min(a.byteLength, B ?? a.byteLength); i++)
+        b = (b << 8n) + BigInt(a[i]!);
     return b;
 }
 
@@ -145,13 +161,13 @@ class Ecdsa {
     static sign(T:FiniteDomain, H:Uint8Array, d:bigint, hashlen:number):Signature {
         const zero = new Uint8Array(hashlen);
         const K = new Uint8Array(hashlen);
-        const N = bigintToUint8Array_LE(T.n, hashlen);
-        const e = uint8ArrayToBigint_LE(H, hashlen);
+        const N = bigintToUint8Array_BE(T.n, hashlen);
+        const e = uint8ArrayToBigint_BE(H, hashlen);
         const R = new FinitePoint();
         while (true) {
             do crypto.getRandomValues(K)
             while (compare(K, N) == 1 || compare(K, zero) == 0);
-            const k = uint8ArrayToBigint_LE(K, hashlen);
+            const k = uint8ArrayToBigint_BE(K, hashlen);
             T.E.multiply(R, k, T.G);
             if (R.x === undefined) continue;
             const r = R.x % T.n;
@@ -176,7 +192,7 @@ class Ecdsa {
     static verify(Q:FinitePoint, T:FiniteDomain, S:Signature, H:Uint8Array, hashlen:number):boolean {
         if (S.r == 0n || S.r >= T.n) return false;
         if (S.s == 0n || S.s >= T.n) return false;
-        const e = uint8ArrayToBigint_LE(H, hashlen);
+        const e = uint8ArrayToBigint_BE(H, hashlen);
         const eG = T.E.multiply(new FinitePoint(), e, T.G);
         const rQ = T.E.multiply(new FinitePoint(), S.r, Q);
         const R = T.E.add(new FinitePoint(), eG, rQ);
@@ -206,7 +222,7 @@ class Ecdsa {
             T.E.solve_p3mod4(R);
             T.E.multiply(nR, T.n, R);
             if (!nR.isIdentity) continue;
-            const e = uint8ArrayToBigint_LE(H, hashlen);
+            const e = uint8ArrayToBigint_BE(H, hashlen);
             const reciprocalR = T.F.reciprocal(S.r);
             const inverseE = T.F.inverse(e);
             T.E.multiply(eG, inverseE, T.G);
