@@ -1,7 +1,7 @@
 {
     "name": "@bradthomasbrown/ecdsa",
     "description": "Minimal, unoptimized, and unaudited keccak and sponge function library in JavaScript/TypeScript.",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "author": "Brad Brown <https://t.me/bradthomasbrown>",
     "type": "module",
     "scripts": {
