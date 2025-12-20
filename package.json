@@ -4,6 +4,12 @@
     "version": "1.0.4",
     "author": "Brad Brown <https://t.me/bradthomasbrown>",
     "type": "module",
+    "scripts": {
+        "bump-patch": "npm version patch && git push && npm publish --access=public",
+        "bump-minor": "npm version minor && git push && npm publish --access=public",
+        "bump-major": "npm version major && git push && npm publish --access=public",
+        "prepublishOnly": "bun test.ts"
+    },
     "files": [
         "dist/"
     ],
@@ -11,7 +17,14 @@
         ".": "./dist/ecdsa.js"
     },
     "dependencies": {
-        "@bradthomasbrown/finite-curve": "^2.2.0",
-        "@bradthomasbrown/finite-domain": "^1.0.1"
+        "@bradthomasbrown/finite-curve": "^3.0.0",
+        "@bradthomasbrown/finite-domain": "^2.0.0",
+        "@bradthomasbrown/keccak": "^1.0.0"
+    },
+    "devDependencies": {
+        "@bradthomasbrown/rlp": "^1.0.0",
+        "@noble/curves": "^2.0.1",
+        "@noble/secp256k1": "^3.0.0",
+        "@types/bun": "^1.3.5"
     }
 }
