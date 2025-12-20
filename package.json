@@ -14,7 +14,8 @@
         "dist/"
     ],
     "exports": {
-        ".": "./dist/ecdsa.js"
+        ".": "./dist/ecdsa.js",
+        "./concrete": "./dist/concrete/concrete.js"
     },
     "dependencies": {
         "@bradthomasbrown/finite-curve": "^3.0.0",
