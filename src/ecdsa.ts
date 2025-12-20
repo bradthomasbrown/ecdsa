@@ -65,126 +65,41 @@ function uint8ArrayToBigint_LE(a:Uint8Array, B?:number):bigint {
     return b;
 }
 
-/**
- * Decode `B` of the most-significant bytes of a big-endian encoded Uint8Array to a positive BigInt.
- * @param {bigint} a - The Uint8Array to decode.
- * @param {number|undefined} B - The number of bytes to decode, or undefined if decoding all bytes.
- * @returns {bigint} The decoded BigInt.
- */
-function uint8ArrayToBigint_BE(a:Uint8Array, B?:number):bigint {
-    let b = 0n;
-    for (let i = 0; i < Math.min(a.byteLength, B ?? a.byteLength); i++)
-        b = (b << 8n) + BigInt(a[i]!);
-    return b;
+function _f6555a_(r:bigint, s:bigint) {
+    return { r, s };
 }
 
-/**
- * The Signature class, representing an ECDSA signature.
- */
-class Signature {
-
-    /**
-     * Parameter `r` of the signature.
-     * @type {bigint}
-     */
-    r:bigint
-
-    /**
-     * Parameter `s` of the signature.
-     * @type {bigint}
-     */
-    s:bigint
-
-
-    constructor(r:bigint, s:bigint) {
-        this.r = r;
-        this.s = s;
-    }
-
+function _f34c7e_(_T:FiniteDomain, _d:bigint, _M:Uint8Array, _e:bigint, r:bigint, s:bigint, _R:FinitePoint) {
+    return _f6555a_(r, s);
 }
 
-/**
- * The Ecdsa class. Static methods the general ECDSA signature scheme to be used.
- * Instances combine elliptic curve domain parameters, a hashing function,
- * and a hash length to simplify ECDSA algorithm operations.
- */
-class Ecdsa {
-
-    /**
-     * A group of elliptic curve domain parameters as a FiniteDomain class instance.
-     * @type {FiniteDomain}
-     */
-    T:FiniteDomain
-
-    /**
-     * A hashing function.
-     * @type {(M:Uint8Array)=>Uint8Array}
-     */
-    Hash:(M:Uint8Array)=>Uint8Array
-
-    /**
-     * The length of bytes to use from a hash. (little-endian?)
-     * @type {number}
-     */
-    hashlen:number
-
-    constructor(T:FiniteDomain, Hash:(M:Uint8Array)=>Uint8Array, hashlen:number) {
-        this.T = T;
-        this.Hash = Hash;
-        this.hashlen = hashlen;
+function _033399_(r:bigint, s:bigint, R:FinitePoint, n:bigint) {
+    let v = 0n;
+    v |= R.y! & 1n;
+    v |= R.x! / n << 1n;
+    if (s > n >> 1n) {
+        s = n - s;
+        v ^= 1n;
     }
+    return { r, s, v };
+}
 
-    /**
-     * Sign a hash with a secret.
-     * @param {Uint8Array} H - A hash.
-     * @param {bigint} d - A secret.
-     * @returns An ECDSA signature.
-     */
-    sign(H:Uint8Array, d:bigint):Signature {
-        return Ecdsa.sign(this.T, H, d, this.hashlen);
-    }
+function _30ecde_(T:FiniteDomain, _d:bigint, _M:Uint8Array, _e:bigint, r:bigint, s:bigint, R:FinitePoint) {
+    return _033399_(r, s, R, T.n);
+}
 
-    /**
-     * Verify a signature was produced by an entity aware of a secret which generated point `Q`.
-     * @param {FinitePoint} Q - A public point.
-     * @param {Signature} S - An ECDSA signature.
-     * @param {Uint8Array} H - A hashed message.
-     * @returns Whether or not the signature was produced by an entity aware of a secret which generated point `Q`.
-     */
-    verify(Q:FinitePoint, S:Signature, H:Uint8Array):boolean {
-        return Ecdsa.verify(Q, this.T, S, H, this.hashlen);
-    }
-
-    /**
-     * Yield the potential public points which may have produced an ECDSA signature.
-     * - Note: Assumes the elliptic curve of the domain parameters is over a finite field whose order is
-     * equivalent to 3 mod 4.
-     * @param {Signature} S - An ECDSA signature.
-     * @param {Uint8Array} H - A hashed message.
-     * @yields {FinitePoint} The potential public points which may have produced the ECDSA signature.
-     */
-    recover_p3mod4(S:Signature, H:Uint8Array):Generator<FinitePoint> {
-        return Ecdsa.recover_p3mod4(this.T, S, H, this.hashlen);
-    }
-
-    /**
-     * Sign a hashed message given elliptical domain parameters, a secret, and the number of bytes to use from the hash.
-     * @param {FiniteDomain} T - A group of elliptic curve domain parameters as a FiniteDomain class instance.
-     * @param {Uint8Array} H - A hashed message as a Uint8Array.
-     * @param {bigint} d - A secret.
-     * @param {number} hashlen - The number of bytes to use from the hashed message.
-     * @returns {Signature} An ECDSA signature.
-     */
-    static sign(T:FiniteDomain, H:Uint8Array, d:bigint, hashlen:number):Signature {
-        const zero = new Uint8Array(hashlen);
-        const K = new Uint8Array(hashlen);
-        const N = bigintToUint8Array_LE(T.n, hashlen);
-        const e = uint8ArrayToBigint_BE(H, hashlen);
+function _6dcb8a_<S>(T:FiniteDomain, _ef_:(M:Uint8Array)=>bigint, _7f_:(..._11_:any[])=>S) {
+    return function(d:bigint, M:Uint8Array) {
+        const nByteLength = (n => { let i = 0; while (n > 0n) { n >>= 8n; i++; } return i })(T.n);
+        const zero = new Uint8Array(nByteLength);
+        const K = new Uint8Array(nByteLength);
+        const N = bigintToUint8Array_LE(T.n, nByteLength);
+        const e = _ef_(M);
         const R = new FinitePoint();
         while (true) {
             do crypto.getRandomValues(K)
-            while (compare(K, N) == 1 || compare(K, zero) == 0);
-            const k = uint8ArrayToBigint_LE(K, hashlen);
+            while (compare(K, N) >= 0 || compare(K, zero) == 0);
+            const k = uint8ArrayToBigint_LE(K, nByteLength);
             T.E.multiply(R, k, T.G);
             if (R.x === undefined) continue;
             const r = R.x % T.n;
@@ -193,56 +108,26 @@ class Ecdsa {
             const _68_ = T.F.add(e, _77_);
             const s = T.F.divide(_68_, k);
             if (s == 0n) continue;
-            return new Signature(r, s);
+            return _7f_(T, d, M, e, r, s, R);
         }
     }
+}
 
-    /**
-     * Verify a signature was produced by an entity aware of a secret which generated point `Q`.
-     * @param {FinitePoint} Q - A public point.
-     * @param {FiniteDomain} T - A group of elliptic curve domain parameters as a FiniteDomain class instance.
-     * @param {Signature} S - An ECDSA signature.
-     * @param {Uint8Array} H - A hashed message.
-     * @param {number} hashlen - The number of bytes to use from the hashed message.
-     * @returns Whether or not the signature was produced by an entity aware of a secret which generated point `Q`.
-     */
-    static verify(Q:FinitePoint, T:FiniteDomain, S:Signature, H:Uint8Array, hashlen:number):boolean {
-        if (S.r == 0n || S.r >= T.n) return false;
-        if (S.s == 0n || S.s >= T.n) return false;
-        const e = uint8ArrayToBigint_BE(H, hashlen);
-        const eG = T.E.multiply(new FinitePoint(), e, T.G);
-        const rQ = T.E.multiply(new FinitePoint(), S.r, Q);
-        const R = T.E.add(new FinitePoint(), eG, rQ);
-        T.divide(R, S.s, R);
-        if (R.isIdentity) return false;
-        return R.x! % T.n == S.r
-    }
-
-    /**
-     * Yield the potential public points which may have produced an ECDSA signature.
-     * - Note: Assumes the elliptic curve of the domain parameters is over a finite field whose order is
-     * equivalent to 3 mod 4.
-     * @param {FiniteDomain} T - A group of elliptic curve domain parameters as a FiniteDomain class instance.
-     * @param {Signature} S - An ECDSA signature.
-     * @param {Uint8Array} H - A hashed message.
-     * @param {number} hashlen - The number of bytes to use from the hashed message.
-     * @yields {FinitePoint} The potential public points which may have produced the ECDSA signature.
-     */
-    static* recover_p3mod4(T:FiniteDomain, S:Signature, H:Uint8Array, hashlen:number):Generator<FinitePoint> {
+function _2bfce0_<S extends { r:bigint, s:bigint }>(T:FiniteDomain, _32_:(M:Uint8Array)=>bigint) {
+    return function*(S:S, M:Uint8Array) {
         const R = new FinitePoint();
         const nR = new FinitePoint();
         const eG = new FinitePoint();
         R.isIdentity = false;
-        for (let j = 0n; j <= T.h; j++) {
-            const jn = j * T.n;
+        const e = _32_(M) % T.n;
+        const inverseE = T.F.inverse(e);
+        T.E.multiply(eG, inverseE, T.G);
+        const reciprocalR = T.F.reciprocal(S.r);
+        for (let j = 0n, jn = 0n; j <= T.h; j++, jn += T.n) {
             R.x = T.E.F.add(S.r, jn);
-            T.E.solve_p3mod4(R);
+            T.E.solve(R);
             T.E.multiply(nR, T.n, R);
             if (!nR.isIdentity) continue;
-            const e = uint8ArrayToBigint_BE(H, hashlen);
-            const reciprocalR = T.F.reciprocal(S.r);
-            const inverseE = T.F.inverse(e);
-            T.E.multiply(eG, inverseE, T.G);
             for (let k = 0; k < 2; k++) {
                 const Qa = new FinitePoint();
                 T.E.multiply(Qa, S.s, R);
@@ -252,8 +137,96 @@ class Ecdsa {
                 T.E.negate(R);
             }
         }
+    };
+}
+
+function _560c92_<S extends { r:bigint, s:bigint, v:bigint }>(T:FiniteDomain, _d8_:(M:Uint8Array)=>bigint) {
+    return function (S:S, M:Uint8Array) {
+        const R = new FinitePoint();
+        R.x = S.r + (S.v >> 1n) * T.n;
+        T.E.solve(R);
+        if (((S.v & 1n) ^ (R.y! & 1n)) != 0n) T.E.negate(R);
+        const ir = T.F.reciprocal(R.x);
+        const h = _d8_(M) % T.n;
+        const u1 = T.F.multiply(T.F.inverse(h), ir);
+        const u2 = T.F.multiply(S.s, ir);
+        const u1G = T.E.multiply(new FinitePoint(), u1, T.G);
+        const u2R = T.E.multiply(new FinitePoint(), u2, R)
+        const Q = T.E.add(new FinitePoint(), u1G, u2R);
+        return Q;
+    }
+}
+
+function _66a7cf_<S extends { r: bigint; s: bigint; }, Q>(
+    _42_:(..._cc_:any[])=>S,
+    _dd_:(
+        T:FiniteDomain,
+        _ef_:(M:Uint8Array)=>bigint
+    )=>(S:S, M:Uint8Array)=>Q
+) {
+
+    /**
+    * The Ecdsa class. Static methods the general ECDSA signature scheme to be used.
+    * Instances combine elliptic curve domain parameters, a hashing function,
+    * and a hash length to simplify ECDSA algorithm operations.
+    */
+    return class Ecdsa {
+
+        /**
+         * A group of elliptic curve domain parameters as a FiniteDomain class instance.
+         * @type {FiniteDomain}
+         */
+        T:FiniteDomain;
+
+        /**
+         * A function which converts a message into an integer.
+         * @type {(M:Uint8Array)=>bigint}
+         */
+        _a7_:(M:Uint8Array)=>bigint;
+
+        /**
+         * Sign a message with a secret.
+         * @param {bigint} d - A secret.
+         * @param {Uint8Array} M - A message.
+         * @returns An ECDSA signature.
+         */
+        sign:(d:bigint, M:Uint8Array)=>S;
+
+        /**
+         * Return the public point(s) given an ECDSA signature of a message.
+         * @param {Signature} S - An ECDSA signature.
+         * @param {Uint8Array} M - A message.
+         */
+        recover:(S:S, M:Uint8Array)=>Q;
+
+        constructor(T:FiniteDomain, _a7_:(M:Uint8Array)=>bigint) {
+            this.T = T;
+            this._a7_ = _a7_;
+            this.sign = _6dcb8a_(T, _a7_, _42_);
+            this.recover = _dd_(T, _a7_);
+        }
+
+        /**
+         * Verify a signed message was produced by an entity aware of a secret which generated point `Q`.
+         * @param {FinitePoint} Q - A public point.
+         * @param {S} S - An ECDSA signature.
+         * @param {Uint8Array} M - A message.
+         * @returns Whether or not the signature was produced by an entity aware of a secret which generated point `Q`.
+         */
+        verify(Q:FinitePoint, S:S, M:Uint8Array):boolean {
+            if (S.r == 0n || S.r >= this.T.n) return false;
+            if (S.s == 0n || S.s >= this.T.n) return false;
+            const e = this._a7_(M);
+            const eG = this.T.E.multiply(new FinitePoint(), e, this.T.G);
+            const rQ = this.T.E.multiply(new FinitePoint(), S.r, Q);
+            const R = this.T.E.add(new FinitePoint(), eG, rQ);
+            this.T.divide(R, S.s, R);
+            if (R.isIdentity) return false;
+            return R.x! % this.T.n == S.r
+        }
+
     }
 
 }
 
-export { Ecdsa, Signature };
+export { _66a7cf_, _f34c7e_, _30ecde_, _2bfce0_, _560c92_ };
