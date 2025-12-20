@@ -1,0 +1,26 @@
+import { secp256k1 as noble_secp256k1 } from "@noble/curves/secp256k1.js";
+import { secp256k1 as dizzy_secp256k1 } from "@bradthomasbrown/finite-domain/domains";
+import { sha_3, keccak_c } from "@bradthomasbrown/keccak";
+import { encode } from "@bradthomasbrown/rlp";
+import { _6aab57_ } from "./dist/concrete/concrete.js";
+
+const keccak256 = sha_3(keccak_c, 512, 0b0, 0);
+const secret = 67546559734169151049750073306858167224481616672714023486695923696765722947804n;
+const Qu = dizzy_secp256k1.public(secret);
+const dizzyPublicHex0 = Qu.x!.toString(16).padStart(64, '0') + Qu.y!.toString(16).padStart(64, '0');
+const bytecode = "60016000556005601160003960056000f36000600055";
+const data = Uint8Array.fromHex(bytecode);
+const nonce = 0x0n;
+const gasPrice = 0x3b9aca07n;
+const gasLimit = 0x12a88n;
+const chainId = 0x7a69n;
+const rawTxArray = [nonce, gasPrice, gasLimit, 0n, 0n, data, chainId, 0n, 0n];
+const rawTxEncoded = encode(rawTxArray);
+const rawTxHash = keccak256(rawTxEncoded);
+const signature = _6aab57_.sign(secret, rawTxEncoded);
+const noblePublicHex = new noble_secp256k1.Signature(signature.r, signature.s, Number(signature.v)).recoverPublicKey(rawTxHash).toHex(false).slice(2);
+const Q = _6aab57_.recover(signature, rawTxEncoded);
+const dizzyPublicHex1 = Q.x!.toString(16).padStart(64, '0') + Q.y!.toString(16).padStart(64, '0');
+console.log({ dizzyPublicHex0, dizzyPublicHex1, noblePublicHex });
+if (dizzyPublicHex0 !== dizzyPublicHex1) throw new Error("we failed to recover our public key");
+if (dizzyPublicHex0 !== noblePublicHex) throw new Error("noble failed to recover our public key");
